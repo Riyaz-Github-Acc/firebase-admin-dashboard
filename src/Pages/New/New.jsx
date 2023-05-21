@@ -1,5 +1,10 @@
 import { useState } from "react";
 
+import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { db } from "../../firebase";
+import { auth } from "../../firebase";
+
 // Image
 import ImgPlaceholder from "../../assets/images/single/img-placeholder.png";
 
@@ -8,7 +13,33 @@ import Sidebar from "../../Components/Sidebar/Sidebar";
 import styles from "./New.module.scss";
 
 const New = ({ inputs, title }) => {
-    const [image, setImage] = useState("");
+    const [file, setFile] = useState("");
+    const [data, setData] = useState({});
+
+    const handleInputs = (e) => {
+        e.preventDefault();
+        const id = e.target.id;
+        const value = e.target.value;
+
+        return setData({ ...data, [id]: value });
+    };
+
+    const handleAdd = async (e) => {
+        e.preventDefault();
+
+        try {
+            const res = await createUserWithEmailAndPassword(
+                auth,
+                data.email,
+                data.password
+            );
+            await setDoc(doc(db, "users", res.user.uid), {
+                ...data,
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    };
 
     return (
         <div className={styles.new}>
@@ -21,15 +52,15 @@ const New = ({ inputs, title }) => {
                 </div>
 
                 <div className={styles.bottom}>
-                    <form>
+                    <form onSubmit={handleAdd}>
                         <div className={styles.left}>
                             <h4>Upload Image:</h4>
 
                             <label htmlFor="img_file">
                                 <img
                                     src={
-                                        image
-                                            ? URL.createObjectURL(image)
+                                        file
+                                            ? URL.createObjectURL(file)
                                             : ImgPlaceholder
                                     }
                                     alt=""
@@ -38,7 +69,7 @@ const New = ({ inputs, title }) => {
                             <input
                                 type="file"
                                 id="img_file"
-                                onChange={(e) => setImage(e.target.files[0])}
+                                onChange={(e) => setFile(e.target.files[0])}
                                 style={{ display: "none" }}
                             />
                         </div>
@@ -56,12 +87,13 @@ const New = ({ inputs, title }) => {
                                             type={input.type}
                                             id={input.id}
                                             placeholder={input.placeholder}
+                                            onChange={handleInputs}
                                         />
                                     </div>
                                 ))}
                             </div>
 
-                            <button>Send</button>
+                            <button type="submit">Send</button>
                         </div>
                     </form>
                 </div>
